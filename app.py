@@ -7,6 +7,7 @@ from parler_tts import ParlerTTSForConditionalGeneration
 from transformers import AutoTokenizer
 import uuid
 import os
+from utils import main
 
 app = FastAPI()
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -20,7 +21,7 @@ class TTSRequest(BaseModel):
     description: str = "A female speaker delivers expressive speech in high quality."
 
 @app.post("/tts")
-def generate_audio(data: TTSRequest):
+async def generate_audio(data: TTSRequest):
     prompt_input = prompt_tokenizer(data.text, return_tensors="pt").to(device)
     desc_input = desc_tokenizer(data.description, return_tensors="pt").to(device)
 
@@ -35,4 +36,13 @@ def generate_audio(data: TTSRequest):
     filename = f"{uuid.uuid4().hex}.wav"
     sf.write(filename, audio, model.config.sampling_rate)
 
-    return {"message": "Audio generated", "file": filename}
+    try:
+        read_url = await main(filename)
+    finally:
+        if os.path.exists(filename):
+            os.remove(filename)
+
+    return {
+        "message": "TTS audio generated and uploaded successfully.",
+        "url": read_url
+    }

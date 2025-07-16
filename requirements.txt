@@ -4,3 +4,5 @@ parler-tts @ git+https://github.com/huggingface/parler-tts.git
 soundfile
 fastapi
 uvicorn
+aiofiles
+aiohttp
