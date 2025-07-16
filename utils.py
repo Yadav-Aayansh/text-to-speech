@@ -87,5 +87,5 @@ async def main(file):
         await upload_file(write_url, file)
         blob_uri = get_blob_uri(write_url)
         await finalize_artifact(session, artifact_id, blob_uri)
-        read_url = await get_signed_url(session, artifact_id, "READ")
+        read_url = await get_signed_url(session, artifact_id, "READ", file)
         return read_url
