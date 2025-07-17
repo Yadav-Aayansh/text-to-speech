@@ -39,9 +39,10 @@ def split_text(text, max_tokens=300):
         chunks.append(current.strip())
     return chunks
 
-def tts_chunk(chunk, desc_input):
+def tts_chunk(chunk, description):
     with torch.inference_mode():
         prompt_input = prompt_tokenizer(chunk, return_tensors="pt").to(device)
+        desc_input = desc_tokenizer(description, return_tensors="pt").to(device)
         output = model.generate(
             input_ids=desc_input.input_ids,
             attention_mask=desc_input.attention_mask,
@@ -54,14 +55,11 @@ def tts_chunk(chunk, desc_input):
 async def generate_audio(data: TTSRequest):
     text = data.text.strip()
     chunks = split_text(text)
-    desc_input = desc_tokenizer(data.description, return_tensors="pt").to(device)
 
-    loop = asyncio.get_event_loop()
-    tasks = [
-        loop.run_in_executor(executor, tts_chunk, chunk, desc_input)
-        for chunk in chunks
-    ]
-    audios = await asyncio.gather(*tasks)
+    audios = []
+    for chunk in chunks:
+        audio = await asyncio.to_thread(tts_chunk, chunk, data.description)
+        audios.append(audio)
 
     full_audio = np.concatenate(audios)
     filename = f"{uuid.uuid4().hex}.wav"
