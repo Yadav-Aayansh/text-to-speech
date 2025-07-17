@@ -59,4 +59,21 @@ def generate_by_sentence(description, full_prompt):
 
     return np.concatenate(final_audio)
 
+@app.post("/tts")
+async def generate_audio(data: TTSRequest):
+    audio_arr = generate_by_sentence(data.description, data.text)
+    
+    filename = f"{uuid.uuid4().hex}.wav"
+    sf.write(filename, audio_arr, model.config.sampling_rate)
+
+    try:
+        read_url = await main(filename)
+    finally:
+        if os.path.exists(filename):
+            os.remove(filename)
+
+    return {
+        "message": "TTS audio generated and uploaded successfully.",
+        "url": read_url
+    }
 
